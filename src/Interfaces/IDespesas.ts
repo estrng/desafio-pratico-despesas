@@ -4,5 +4,7 @@ export interface IDespesas {
   categoria: string;
   valor: number;
   mes: string;
-  dias: number | string;
+  dia: number | string;
+  monthNumber?: string | number;
+  yearNumber?: number | string;
 }
