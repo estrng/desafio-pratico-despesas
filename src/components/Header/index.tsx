@@ -68,6 +68,9 @@ export default function Header({
       <Box className={classes.total}>
         <h1>Total: {total} </h1>
       </Box>
+      <Box className={classes.total}>
+        <h1>TESTE </h1>
+      </Box>
     </Box>
   );
 }

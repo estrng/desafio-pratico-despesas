@@ -1,9 +1,10 @@
-import { Box } from '@material-ui/core';
+import { Box, rgbToHex } from '@material-ui/core';
 import React, { useEffect, useState } from 'react';
-import Despesas from '../../components/Despesas';
 import Header from '../../components/Header';
+import DTabs from '../../components/Tabs';
 import { IDespesas } from '../../Interfaces/IDespesas';
-import { api } from '../../services/api';
+import { ISummary } from '../../Interfaces/ISummary';
+import { getDespesas } from '../../services/api';
 import { setYearAndMonth } from '../../services/dates';
 import { round } from '../../services/math';
 
@@ -13,6 +14,7 @@ export default function Home(): React.ReactElement {
   const [month, setMonth] = useState(1);
   const [despesasFiltered, setDespesasFiltered] = useState<IDespesas[]>([]);
   const [total, setTotal] = useState(0);
+  const [summary, setSummary] = useState<ISummary>();
 
   function handleGetYear(event: React.ChangeEvent<{ value: any }>): void {
     setYear(event.target.value);
@@ -25,17 +27,11 @@ export default function Home(): React.ReactElement {
   console.log(month);
 
   useEffect(() => {
-    async function getDespesas() {
-      const { data } = await api.get('despesas');
-      setDespesas(data);
-    }
-    getDespesas();
+    getDespesas().then(setDespesas);
   }, []);
   console.log('Despesas: ', despesas.length + '\n' + 'Example: ', despesas[0]);
 
   const despesasWithMods = setYearAndMonth(despesas);
-
-  console.log(despesasWithMods);
 
   useEffect(() => {
     function filterDespesas() {
@@ -59,16 +55,44 @@ export default function Home(): React.ReactElement {
     getTotal();
   }, [despesasFiltered]);
 
-  console.log(despesasFiltered);
-
   //order despesas by day asc.
   const despesasOrdered = despesasFiltered.sort((a, b) => {
     return Number(a.dia) - Number(b.dia);
   });
+  /* console.log('despesasOrdered: ', despesasOrdered); */
 
-  console.log('despesasOrdered: ', despesasOrdered);
+  useEffect(() => {
+    function calcSummary() {
+      const summary: any = [];
+      despesasOrdered.forEach((despesa: IDespesas) => {
+        const found = summary.find(
+          (item: ISummary) => item.categoria === despesa.categoria
+        );
+        if (found) {
+          found.valor += despesa.valor;
+        } else {
+          summary.push({
+            id: despesa.id,
+            categoria: despesa.categoria,
+            valor: despesa.valor,
+            descricao: despesa.descricao,
+          });
+        }
+      });
+
+      //order summary by valor desc.
+      summary.sort((a: any, b: any) => {
+        return b.valor - a.valor;
+      });
+
+      setSummary(summary);
+      console.log('summary: ', summary);
+    }
+    calcSummary();
+  }, [despesasOrdered]);
+
   return (
-    <Box>
+    <Box style={{ background: 'rgb( 228 ,224 ,223)' }}>
       <Header
         getYear={handleGetYear}
         getMonth={handleGetMonth}
@@ -76,7 +100,7 @@ export default function Home(): React.ReactElement {
         month={month}
         total={round(total)}
       />
-      <Despesas despesas={despesasOrdered} />
+      <DTabs despesas={despesasOrdered} summary={summary} />
     </Box>
   );
 }
